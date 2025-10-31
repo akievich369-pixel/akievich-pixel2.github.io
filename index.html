@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Магический Шар</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Общие стили и фон --- */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a0a2a; 
+            flex-direction: column;
+            font-family: Italic;
+            overflow: hidden; 
+            color: #f0e6ff;
+        }
+
+        /* --- Контейнер для всей сцены (шар + ведьма) --- */
+        .scene-container {
+            position: relative;
+            display: flex;
+            align-items: flex-end; 
+            gap: 5px; 
+            margin-bottom: 50px; 
+        }
+
+        /* --- Контейнер для магического шара --- */
+        .orb-wrapper {
+            position: relative;
+            cursor: pointer;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 100px; 
+        }
+
+        /* --- Магический Шар (Вращающийся Элемент) --- */
+        .magic-orb {
+            width: 550px; 
+            height: 550px;
+            background: radial-gradient(circle at 70% 30%, #6a059e, #3a0352 80%); 
+            border-radius: 50%;
+            box-shadow: 0 0 80px rgba(180, 0, 255, 0.7), 
+                        inset 0 0 30px rgba(255, 255, 255, 0.4); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: transform 1.5s ease-out; 
+            border: 4px solid rgba(255, 255, 255, 0.3); 
+            position: relative; 
+            overflow: hidden;
+        }
+
+        /* Внутренний текст предсказания */
+        .prediction-text {
+            font-size: 2em; 
+            color: #ffe68a; 
+            text-align: center;
+            padding: 20px;
+            max-width: 80%; 
+            opacity: 0; 
+            /* 🔥 ИЗМЕНЕНО: Увеличили время проявления до 2 секунд */
+            transition: opacity 3s ease-in-out;
+            z-index: 20;
+            font-style: italic;
+            text-shadow: 
+           0 0 5px rgba(255, 200, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+        
+        }
+
+        .prediction-text.show {
+            opacity: 1;
+        }
+
+        /* --- Анимация вращения шара --- */
+        @keyframes spin-orb {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .magic-orb.rotating {
+            animation: spin-orb 1s linear infinite; 
+        }
+
+        /* --- Эффект "тумана/дымки" внутри шара --- */
+        @keyframes orb-mist {
+            from { transform: translate(0, 0) scale(1); opacity: 0.1; }
+            to { transform: translate(10px, -10px) scale(1.1); opacity: 0.2; }
+        }
+
+        .magic-orb::before, .magic-orb::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            filter: blur(20px);
+            animation: orb-mist 5s infinite alternate ease-in-out;
+            z-index: 5;
+        }
+
+        .magic-orb::before {
+            width: 150px;
+            height: 150px;
+            top: 10%;
+            left: 10%;
+        }
+
+        .magic-orb::after {
+            width: 120px;
+            height: 120px;
+            bottom: 15%;
+            right: 15%;
+            animation-delay: 1.5s;
+            animation-duration: 6s;
+        }
+
+        /* --- Ведьма (Изображение) --- */
+        .witch-container {
+            position: relative; 
+            z-index: 11; 
+            display: flex; 
+            align-items: flex-end; 
+            height: 600px; 
+            cursor: pointer; 
+        }
+
+        .witch-image {
+            width: 400px; 
+            height: auto; 
+            transform: scaleX(-1); 
+            margin-top: 150px; 
+            animation: fly-float 4s ease-in-out infinite alternate; 
+        }
+        
+        /* 📣 ИСПРАВЛЕННЫЙ СТИЛЬ: Всплывающий текст (невидимый по умолчанию) */
+        .ouch-message {
+            position: absolute;
+            top: 150px; 
+            left: 50%;
+            /* Начальное положение: Сдвигаем элемент ВНИЗ, для анимации СНИЗУ ВВЕРХ */
+            transform: translate(-50%, 100%); 
+            padding: 20px 40px; 
+            
+            /* СТИЛИ СКРЫТИЯ/ВИДИМОСТИ */
+            opacity: 0; /* Делает текст невидимым */
+            background: transparent; 
+            border: none; 
+            box-shadow: none;
+            filter: blur(5px); 
+            border-radius: 50%; 
+            
+            color: #ffe68a; 
+            
+            font-size: 1.8em; 
+            font-weight: bold;
+            font-style: normal; 
+            font-family: Italic; 
+            text-shadow: 0 0 5px rgba(255, 200, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.5); 
+
+            transition: opacity 0.4s ease-out, 
+                        transform 0.4s ease-out,
+                        filter 0.4s ease-out,
+                        clip-path 0.4s ease-out;
+
+            pointer-events: none; 
+            z-index: 15;
+            white-space: nowrap;
+        }
+
+        /* Анимация при появлении */
+        .ouch-message.show {
+            opacity: 1; /* Делает текст видимым */
+            transform: translate(-50%, 0); /* Перемещает текст на финальную позицию */
+            
+            /* УБИРАЕМ РАЗМЫТИЕ и РАСКРЫВАЕМ ОБЛАКО */
+            filter: blur(0px); 
+            clip-path: circle(100% at 50% 50%); 
+        }
+
+        /* --- Анимация для парящей ведьмы --- */
+        @keyframes fly-float {
+            0% {
+                transform: translateY(0) scaleX(-1); 
+            }
+            50% {
+                transform: translateY(-20px) scaleX(-1); 
+            }
+            100% {
+                transform: translateY(0) scaleX(-1); 
+            }
+        }
+
+        /* --- Информационные тексты --- */
+        .info-text {
+            color: #e0d0ff;
+            margin-top: 30px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .reset-message {
+            color: #ff9900; 
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scene-container">
+        
+        <div class="witch-container" onclick="handleWitchClick()">
+            <img src="witch.png" alt="Witch" class="witch-image">
+            <div id="ouchMessage" class="ouch-message">Ай, больно!</div>
+        </div>
+
+        <div class="orb-wrapper" onclick="spinMagicOrb()">
+            <div id="magicOrb" class="magic-orb">
+                <div id="predictionText" class="prediction-text">
+                    Нажми на шар...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="witchSound" src="witch_chuckle.mp3" preload="auto"></audio> 
+    <audio id="spinSound" src="spin_loop.mp3" preload="auto"></audio>
+    <audio id="magicSound" src="magic_chime.mp3" preload="auto"></audio>
+    
+    <p class="info-text">Ведьма прошепчет вам хеллоуинское предсказание...</p>
+    <p id="resetMessage" class="info-text reset-message" style="display:none;"></p>
+
+    <script>
+        let isSpinning = false;
+
+        const initialPredictions = [
+             "👻 Даже призраки завидуют твоему упорству. Твой успех близко, как полночь!",
+             "💰 Сегодня ты найдёшь сокровище, спрятанное не в сундуке, а в новом навыке. Ищи его!",
+             "🎃✨ Преврати тыкву в карету: начни действовать прямо сейчас и увидишь магию!",
+             "🌟 Сними маску сомнений — сегодня ты настоящая звезда, сияющая в ночи!",
+             "🗝️ Ночь Хэллоуина хранит тайны: твоя сила в твоей непредсказуемости. Используй её!",
+             "💡 Не бойся теней, они лишь доказывают, что ты стоишь на свету. Иди вперёд!",
+             "🧹 Если ты ведьма/колдун, не бойся варить свои собственные правила. Будь оригинальным!",
+             "🧪 В котле судьбы кипит удача – сделай свой первый шаг, и она прольется на тебя!",
+             "🌕 Твой путь сегодня освещает полная луна успеха. Доверяй своей интуиции!",
+             "🕸️ Не дай паутине страха опутать свои мечты. Разорви её одним смелым решением!",
+             "🧟 Пусть твои идеи будут такими же живыми, как восставший мертвец! Воплощай их!",
+             "🍬 Сладкое угощение ждет только тех, кто рискнет выйти за порог зоны комфорта!",
+             "🚪 Скрипучая дверь — это приглашение в новую возможность. Открой её без колебаний!",
+             "💪 Ты сильнее, чем кажется твой костюм. Верь в свою внутреннюю магию и силу!",
+             "💎 Не нужно прятаться в склепе: покажи миру свой уникальный блеск и талант!",
+             "👾 У каждого монстра есть своя суперсила. Найди свою и используй сегодня!",
+             "✨ Даже самый маленький светлячок может напугать тьму. Твоя идея — этот свет!",
+             "🦇 Этот день благоволит смелым. Пусть твой крик будет победным кличем!",
+             "🌫️ Завтра может быть туманно, но твой фокус на цели — как свет маяка. Держи курс!",
+             "🎁 Соберись с духом: сегодня ты получишь больше, чем просто сладости!",
+             "🧛 Твоя решимость остра, как клыки вампира. Используй её, чтобы добиться цели!"
+        ];
+        let availablePredictions = [...initialPredictions]; 
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        shuffleArray(availablePredictions);
+
+        // --- ЛОГИКА КЛИКА НА ВЕДЬМУ ---
+        function handleWitchClick() {
+            const ouchMessage = document.getElementById('ouchMessage');
+            const witchSound = document.getElementById('witchSound'); // 🔥 Получаем элемент звука ведьмы
+            
+            if (ouchMessage.classList.contains('show')) {
+                return;
+            }
+            
+            // 🔥 Воспроизводим звук
+            if (witchSound) {
+                witchSound.currentTime = 0; // Начинаем с начала
+                witchSound.volume = 0.7;    // Устанавливаем громкость
+                witchSound.play().catch(error => {
+                    console.log("Ошибка воспроизведения звука ведьмы:", error);
+                });
+            }
+
+            ouchMessage.classList.add('show');
+
+            setTimeout(() => {
+                ouchMessage.classList.remove('show');
+            }, 1500); 
+        }
+
+        // --- УПРАВЛЕНИЕ ЗВУКОМ (Оставлено без изменений) ---
+
+        // Функция для плавного затухания
+        function startFading(audioElement, duration) {
+            const steps = 50; 
+            const stepDelay = duration / steps;
+            const stepVolume = audioElement.volume / steps; 
+            const initialVolume = 0.8; 
+
+            const fadeInterval = setInterval(() => {
+                if (audioElement.volume > stepVolume) {
+                    audioElement.volume -= stepVolume;
+                } else {
+                    clearInterval(fadeInterval);
+                    audioElement.pause();
+                    audioElement.currentTime = 0; 
+                    audioElement.volume = initialVolume; 
+                }
+            }, stepDelay);
+        }
+
+        // playSound управляет только ЗВУКОМ ПРЕДСКАЗАНИЯ (magicSound)
+        function playSound(volume, time = 0, durationMs = null, fadeDurationMs = 1500) {
+            const soundEffect = document.getElementById('magicSound'); 
+            
+            if (soundEffect) {
+                soundEffect.volume = volume;
+                soundEffect.currentTime = time;
+                
+                soundEffect.play().catch(error => {
+                    console.log("Ошибка воспроизведения звука предсказания:", error);
+                });
+
+                if (durationMs !== null) {
+                    const fadeStartDelay = durationMs - fadeDurationMs;
+                    
+                    if (fadeStartDelay < 0) {
+                         startFading(soundEffect, fadeDurationMs);
+                    } else {
+                         setTimeout(() => {
+                            startFading(soundEffect, fadeDurationMs);
+                         }, fadeStartDelay);
+                    }
+                }
+            }
+        }
+        
+        // --- ОСНОВНАЯ ЛОГИКА ШАРА (Оставлено без изменений) ---
+        
+        function spinMagicOrb() {
+            const magicOrb = document.getElementById('magicOrb');
+            const predictionText = document.getElementById('predictionText');
+            const resetMessage = document.getElementById('resetMessage');
+            
+            const spinSoundEffect = document.getElementById('spinSound'); 
+
+            if (isSpinning) {
+                return; 
+            }
+
+            if (availablePredictions.length === 0) {
+                if (spinSoundEffect) {
+                    spinSoundEffect.pause();
+                    spinSoundEffect.currentTime = 0;
+                }
+                
+                resetMessage.textContent = "Ведьма истратила все свои предсказания! Она восстанавливает силы...";
+                resetMessage.style.display = 'block';
+
+                availablePredictions = [...initialPredictions];
+                shuffleArray(availablePredictions);
+                
+                setTimeout(() => {
+                    resetMessage.style.display = 'none';
+                    isSpinning = false; 
+                }, 2500); 
+                
+                return; 
+            }
+
+            isSpinning = true;
+            resetMessage.style.display = 'none';
+
+            predictionText.classList.remove('show');
+            predictionText.textContent = '...ведьма читает знаки...'; 
+            
+            // 1. ЗАПУСКАЕМ ЗВУК ВРАЩЕНИЯ
+            if (spinSoundEffect) {
+                spinSoundEffect.volume = 0.5; 
+                spinSoundEffect.currentTime = 0;
+                spinSoundEffect.loop = true; 
+                spinSoundEffect.play().catch(error => {
+                    console.log("Ошибка воспроизведения звука вращения:", error);
+                });
+            }
+
+            // 2. ЗАПУСКАЕМ АНИМАЦИЮ ВРАЩЕНИЯ
+            magicOrb.style.transform = 'rotate(0turn)'; 
+            magicOrb.classList.add('rotating');
+            
+            const randomTurns = Math.floor(Math.random() * 4 + 5); 
+            magicOrb.style.transform = `rotate(${randomTurns}turn)`; 
+
+            const spinDuration = 3200; 
+            const fadeTime = 500; 
+
+            // 3. ТАЙМАУТ: Остановка вращения и переход к звуку предсказания
+            setTimeout(() => {
+                magicOrb.classList.remove('rotating');
+                
+                // ПЛАВНО ОСТАНАВЛИВАЕМ ЗВУК ВРАЩЕНИЯ
+                if (spinSoundEffect) {
+                    startFading(spinSoundEffect, fadeTime); 
+                }
+                
+                // ЗАПУСКАЕМ ЗВУК ПРЕДСКАЗАНИЯ (С ЗАДЕРЖКОЙ, ПОСЛЕ НАЧАЛА ЗАТУХАНИЯ)
+                setTimeout(() => {
+                    playSound(0.8, 0, 5000, 1500); 
+                }, 100); 
+                
+                // 4. ВЛОЖЕННЫЙ ТАЙМАУТ: Показывает текст с задержкой 500 мс
+                setTimeout(() => {
+                    const nextPrediction = availablePredictions.shift(); 
+                    predictionText.textContent = nextPrediction;
+                    predictionText.classList.add('show');
+                    isSpinning = false;
+                }, 500); 
+
+            }, spinDuration);
+        }
+    </script>
+</body>
+</html>
